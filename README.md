@@ -84,7 +84,7 @@ Information: Setting verbose to true
 Information: Setting key type to rsa2048
 Information: Setting DNS provider to gandiv5
 Information: Setting key path to /var/snap/lego/common/.lego/certificates
-Command:     GANDIV5_PERSONAL_ACCESS_TOKEN=XXXXXXXXXXX ; /snap/bin/lego --email admin@blah.com --dns gandiv5 --domains "*.blah.com" --key-type rsa2048 run
+Executing:   GANDIV5_PERSONAL_ACCESS_TOKEN=XXXXXXXXXXX ; /snap/bin/lego --email admin@blah.com --dns gandiv5 --domains "*.blah.com" --key-type rsa2048 run
 ```
 
 Deploy/upload SSL certs to iDRAC using defaults:
