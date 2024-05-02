@@ -1,0 +1,23 @@
+# Changes
+# 0.0.1: Wed May  1 22:12:13 AEST 2024
+# Initial version
+# 0.0.2: Thu May  2 11:07:21 AEST 2024
+# Added dracadm information
+# 0.0.3: Thu May  2 14:18:12 AEST 2024
+# Added cert routine
+# 0.0.4: Thu May  2 14:58:22 AEST 2024
+# Added idrac routine
+# 0.0.5: Thu May  2 15:10:29 AEST 2024
+# Added test mode and some error handling
+# 0.0.6: Thu May  2 18:56:32 AEST 2024
+# Added warning code
+# 0.0.7: Thu May  2 20:04:39 AEST 2024
+# Added verbose mode
+# 0.0.8: Thu May  2 21:23:06 AEST 2024
+# Added usage information
+# 0.0.9: Thu May  2 21:41:30 AEST 2024
+# Bug fixes and error checking
+# 0.1.0: Thu May  2 22:50:17 AEST 2024
+# Fixed key path
+# 0.1.1: Thu May  2 23:11:50 AEST 2024
+# Updated documentation
