@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Name:         lolcat (LOM/OOB Letsencrypt Certificate Automation Tool)
-# Version:      0.1.1
+# Version:      0.1.2
 # Release:      1
 # License:      CC-BA (Creative Commons By Attribution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -198,12 +198,12 @@ check_environment () {
   OS_NAME=$(uname)
   if [ -z "$(command -v lego)" ]; then
     if [ "$OS_NAME" = "Darwin" ]; then
-      if [ -z "$(command -v brew)" ]; then
+      if [ "$(command -v brew)" ]; then
         info_message "Installing lego"
         brew install lego
       fi
     else
-      if [ -z "$(command -v lsb_release)" ]; then
+      if [ "$(command -v lsb_release)" ]; then
         OS_DIST=$(lsb_release -is 2> /dev/null)
         if [ "$OS_DIST" = "Ubuntu" ]; then
           info_message "Installing lego"
@@ -240,11 +240,13 @@ check_environment () {
   else
     LEGO_BIN=$(which lego)
   fi
-  if [ ! -d "$KEY_PATH" ]; then
-    command_message "mkdir -p $KEY_PATH"
-    command_message "sudo chown $USER_NAME.$USER_NAME $KEY_PATH"
-    mkdir -p $KEY_PATH
-    sudo chown $USER_NAME.$USER_NAME $KEY_PATH
+  if [ "$OS_NAME" = "Linux" ]; then
+    if [ ! -d "$KEY_PATH" ]; then
+      command_message "mkdir -p $KEY_PATH"
+      command_message "sudo chown $USER_NAME.$USER_NAME $KEY_PATH"
+      mkdir -p $KEY_PATH
+      sudo chown $USER_NAME.$USER_NAME $KEY_PATH
+    fi
   fi
 }
 
@@ -519,4 +521,7 @@ fi
 process_options
 process_defaults
 check_environment
+if [ "$ACTION" = "check" ]; then
+  exit
+fi
 process_actions

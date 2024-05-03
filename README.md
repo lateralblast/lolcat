@@ -8,7 +8,7 @@ LOM/OOB Letsencrypt Certificate Automation Tool
 Version
 -------
 
-Current Version: 0.1.1
+Current Version: 0.1.2
 
 Prerequisites
 -------------
