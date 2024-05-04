@@ -8,7 +8,7 @@ LOM/OOB Letsencrypt Certificate Automation Tool
 Version
 -------
 
-Current Version: 0.1.2
+Current Version: 0.1.4
 
 Prerequisites
 -------------
@@ -79,7 +79,7 @@ Examples
 Create Let's Encrypt SSL cert for domain blah.com using defaults:
 
 ```
-./lolcat.sh --action create --domain blah.com --token XXXXXXXXXXX --options verbose
+./lolcat.sh --action create --email admin@blah.com --domain blah.com --token XXXXXXXXXXX --options verbose
 Information: Setting verbose to true
 Information: Setting key type to rsa2048
 Information: Setting DNS provider to gandiv5

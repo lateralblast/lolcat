@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Name:         lolcat (LOM/OOB Letsencrypt Certificate Automation Tool)
-# Version:      0.1.2
+# Version:      0.1.4
 # Release:      1
 # License:      CC-BA (Creative Commons By Attribution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -23,6 +23,7 @@ SCRIPT_BIN=$( basename "$0" |sed "s/^\.\///g")
 SCRIPT_FILE="$START_PATH/$SCRIPT_BIN"
 SCRIPT_VERSION=$( grep '^# Version' < "$0" | awk '{print $3}' )
 USER_NAME=$(whoami)
+OS_NAME=$(uname)
 
 # Defaults
 
@@ -31,9 +32,7 @@ DEFAULT_KEY_TYPE="rsa2048"
 DEFAULT_OOB_TYPE="idrac"
 DEFAULT_OOB_USER="root"
 DEFAULT_OOB_PASS="calvin"
-COMMON_DIR="/var/snap/lego/common/.lego"
-KEY_PATH="$COMMON_DIR/certificates"
-COMMON_GROUP="adm"
+DEFAULT_KEY_PATH="$HOME/.lego"
 RACADM_VERSION="11010"
 RACADM_BIN="racadm"
 LEGO_BIN="lego"
@@ -42,6 +41,21 @@ DO_WILDCARD="true"
 DO_NOWILDCARD="false"
 DO_TESTMODE="false"
 DO_VERBOSE="false"
+
+if [ "$OS_NAME" = "Linux" ]; then
+  if [ "$(command -v lsb_release)" ]; then
+    OS_DIST=$(lsb_release -is 2> /dev/null)
+    if [ "$OS_DIST" = "Ubuntu" ]; then
+      COMMON_GROUP="adm"
+      COMMON_DIR="/var/snap/lego/common/.lego"
+      DEFAULT_KEY_PATH="$COMMON_DIR/certificates"
+    fi
+  fi
+else
+  if [ "$OS_NAME" = "Darwin" ]; then
+    OS_DIST=$(sw_vers --productName)
+  fi
+fi
 
 # Function: print_cli_help
 #
@@ -67,6 +81,7 @@ print_cli_help () {
     --oobuser     OOB device user (default: $DEFAULT_OOB_USER)
     --oobpass     OOB device pass (default: $DEFAULT_OOB_PASS)
     --keytype     Key type (default: $DEFAULT_KEY_TYPE)
+    --keypath     Key path (default: $DEFAULT_KEY_PATH)
     --sslkey      SSL key file to upload to OOB device
     --sslcert     SSL cert file to uploard to OOB device
 
@@ -195,7 +210,6 @@ command_message () {
 # Check environment
 
 check_environment () {
-  OS_NAME=$(uname)
   if [ -z "$(command -v lego)" ]; then
     if [ "$OS_NAME" = "Darwin" ]; then
       if [ "$(command -v brew)" ]; then
@@ -351,9 +365,16 @@ create_cert () {
     exit_warning "No email address given"
   fi
   if [ "$DNS" = "gandiv5" ]; then
-    command_message "GANDIV5_PERSONAL_ACCESS_TOKEN=$TOKEN ; $LEGO_BIN --email $EMAIL --dns $DNS --domains \"$DOMAIN\" --key-type $KEY_TYPE run"
-    if [ "$DO_TESTMODE" = "false" ]; then
-      GANDIV5_PERSONAL_ACCESS_TOKEN=$TOKEN ; $LEGO_BIN --email $EMAIL --dns $DNS --domains "$DOMAIN" --key-type $KEY_TYPE run
+    if [ "$OS_NAME" = "Linux" ] && [ "$OS_DIST" = "Ubuntu" ]; then
+      command_message "export GANDIV5_PERSONAL_ACCESS_TOKEN=$TOKEN ; $LEGO_BIN --email $EMAIL --dns $DNS --domains \"$DOMAIN\" --key-type $KEY_TYPE run"
+      if [ "$DO_TESTMODE" = "false" ]; then
+        export GANDIV5_PERSONAL_ACCESS_TOKEN=$TOKEN ; $LEGO_BIN --email $EMAIL --dns $DNS --domains "$DOMAIN" --key-type $KEY_TYPE run
+      fi
+    else
+      command_message "export GANDIV5_PERSONAL_ACCESS_TOKEN=$TOKEN ; $LEGO_BIN --path $KEY_PATH --email $EMAIL --dns $DNS --domains \"$DOMAIN\" --key-type $KEY_TYPE run"
+      if [ "$DO_TESTMODE" = "false" ]; then
+        export GANDIV5_PERSONAL_ACCESS_TOKEN=$TOKEN ; $LEGO_BIN --path $KEY_PATH --email $EMAIL --dns $DNS --domains "$DOMAIN" --key-type $KEY_TYPE run
+      fi
     fi
   fi
 }
@@ -480,6 +501,10 @@ do
       ;;
     --keytype)
       KEY_TYPE="$2"
+      shift 2
+      ;;
+    --keypath)
+      KEY_PATH="$2"
       shift 2
       ;;
     --help)
