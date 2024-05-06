@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Name:         lolcat (LOM/OOB Letsencrypt Certificate Automation Tool)
-# Version:      0.1.4
+# Version:      0.1.6
 # Release:      1
 # License:      CC-BA (Creative Commons By Attribution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -160,14 +160,23 @@ print_usage () {
   esac
 }
 
-# Function: exit_warning
+# Function: warning_message
 #
 # Output warning and exit
 
-exit_warning () {
+warning_message () {
   WARNING="$1"
+  FUNCTION="$2"
   echo "Warning:     $WARNING"
-  exit
+  if [ "$FUNCTION" = "EXIT" ]; then
+    exit
+  else
+    if [ "$FUNCTION" = "TEST" ]; then
+      if [ "$DO_TESTMODE" = "false" ]; then
+        exit
+      fi
+    fi
+  fi
 }
 
 # Function: info_message
@@ -237,20 +246,20 @@ check_environment () {
         if [ -f "/opt/dell/srvadmin/sbin/racadm" ]; then
           RACADM_BIN="/opt/dell/srvadmin/sbin/racadm"
         else
-          exit_warning "racadm not installed"
+          warning_message "racadm not installed" "EXIT"
         fi
       fi
     else
       RACADM_BIN=$(which racadm)
     fi
     if [ -z "$(command -v racadm)" ]; then
-      exit_warning "racadm not installed"
+      warning_message "racadm not installed" "EXIT"
     else
       verbose_message "Found $RACADM_BIN"
     fi
   fi
   if [ -z "$(command -v lego)" ]; then
-    exit_warning "lego not installed"
+    warning_message "lego not installed" "EXIT"
   else
     LEGO_BIN=$(which lego)
   fi
@@ -279,7 +288,7 @@ process_defaults () {
     fi
     verbose_message "Setting DNS provider to $DNS"
     if [ "$DOMAIN" = "" ]; then
-      exit_warning "No keys or domain specified"
+      warning_message "No keys or domain specified" "EXIT"
     fi
   fi
   if [ "$KEY_PATH" = "" ]; then
@@ -301,25 +310,47 @@ process_defaults () {
     verbose_message "Setting OOB user to $OOB_PASS"
     if [ "$SSL_KEY" = "" ] && [ "$SSL_CERT" = "" ]; then
       if [ "$DOMAIN" = "" ]; then
-        exit_warning "No keys or domain specified"
+        warning_message "No keys or domain specified" "EXIT"
       fi
     fi
     if [ "$SSL_KEY" = "" ]; then
       if [ "$DO_WILDCARD" = "true" ]; then
-        SSL_KEY="$KEY_PATH/_.$DOMAIN.key"
+        if [[ "$DOMAIN" =~ "*" ]]; then
+          TEMP_DOMAIN=$(echo "$DOMAIN" |sed "s/\*/_/g")
+          SSL_KEY="$KEY_PATH/$TEMP_DOMAIN.key"
+        else
+          SSL_KEY="$KEY_PATH/_.$DOMAIN.key"
+        fi
       else
+        if [[ "$DOMAIN" =~ "*" ]]; then
+          DOMAIN=$(echo "$DOMAIN" |sed "s/\*/_/g")
+        fi
         SSL_KEY="$KEY_PATH/$DOMAIN.key"
       fi
     fi
     if [ "$SSL_CERT" = "" ]; then
       if [ "$DO_WILDCARD" = "true" ]; then
-        SSL_CERT="$KEY_PATH/_.$DOMAIN.crt"
+        if [[ "$DOMAIN" =~ "*" ]]; then
+          TEMP_DOMAIN=$(echo "$DOMAIN" |sed "s/\*/_/g")
+          SSL_CERT="$KEY_PATH/$TEMP_DOMAIN.crt"
+        else
+          SSL_CERT="$KEY_PATH/_.$DOMAIN.crt"
+        fi
       else
+        if [[ "$DOMAIN" =~ "*" ]]; then
+          DOMAIN=$(echo "$DOMAIN" |sed "s/\*/_/g")
+        fi
         SSL_CERT="$KEY_PATH/$DOMAIN.crt"
       fi
     fi
     verbose_message "Setting SSL key to $SSL_KEY"
+    if [ ! -f "$SSL_KEY" ]; then
+      warning_message "File $SSL_KEY does not exist" TEST
+    fi
     verbose_message "Setting SSL cert to $SSL_CERT"
+    if [ ! -f "$SSL_CERT" ]; then
+      warning_message "File $SSL_CERT does not exist" TEST
+    fi
   fi
 }
 
@@ -359,10 +390,10 @@ create_cert () {
     TOKEN="$TEMP"
   fi
   if [ "$TOKEN" = "" ]; then
-    exit_warning "No API key/token given"
+    warning_message "No API key/token given" "EXIT"
   fi
   if [ "$EMAIL" = "" ]; then
-    exit_warning "No email address given"
+    warning_message "No email address given" "EXIT"
   fi
   if [ "$DNS" = "gandiv5" ]; then
     if [ "$OS_NAME" = "Linux" ] && [ "$OS_DIST" = "Ubuntu" ]; then
@@ -385,21 +416,21 @@ create_cert () {
 
 upload_idrac_cert () {
   if [ "$DO_TESTMODE" = "true" ]; then
-    command_message "$RACADM_BIN -r $OOB_HOST -u $OOB_USER -p $OOB_PASS -i sslkeyupload -t 1 -f $SSL_KEY"
-    command_message "$RACADM_BIN -r $OOB_HOST -u $OOB_USER -p $OOB_PASS -i sslcertupload -t 1 -f $SSL_CERT"
+    command_message "$RACADM_BIN -r $OOB_HOST -u $OOB_USER -p $OOB_PASS sslkeyupload -t 1 -f $SSL_KEY"
+    command_message "$RACADM_BIN -r $OOB_HOST -u $OOB_USER -p $OOB_PASS sslcertupload -t 1 -f $SSL_CERT"
     command_message "$RACADM_BIN -r $OOB_HOST -u $OOB_USER -p $OOB_PASS racreset"
   else
     if [ -f "$SSL_KEY" ]; then
-      command_message "$RACADM_BIN -r $OOB_HOST -u $OOB_USER -p $OOB_PASS -i sslkeyupload -t 1 -f $SSL_KEY"
-      $RACADM_BIN -r $OOB_HOST -u $OOB_USER -p $OOB_PASS -i sslkeyupload -t 1 -f $SSL_KEY
+      command_message "$RACADM_BIN -r $OOB_HOST -u $OOB_USER -p $OOB_PASS sslkeyupload -t 1 -f $SSL_KEY"
+      cd $KEY_PATH ; $RACADM_BIN -r $OOB_HOST -u $OOB_USER -p $OOB_PASS sslkeyupload -t 1 -f $SSL_KEY
     else
-      exit_warning "SSL key file $SSL_KEY does not exist"
+      warning_message "SSL key file $SSL_KEY does not exist" "EXIT"
     fi
     if [ -f "$SSL_CERT" ]; then
-      command_message "$RACADM_BIN -r $OOB_HOST -u $OOB_USER -p $OOB_PASS -i sslcertupload -t 1 -f $SSL_CERT"
-      $RACADM_BIN -r $OOB_HOST -u $OOB_USER -p $OOB_PASS -i sslcertupload -t 1 -f $SSL_CERT
+      command_message "$RACADM_BIN -r $OOB_HOST -u $OOB_USER -p $OOB_PASS sslcertupload -t 1 -f $SSL_CERT"
+      cd $KEY_PATH ; $RACADM_BIN -r $OOB_HOST -u $OOB_USER -p $OOB_PASS sslcertupload -t 1 -f $SSL_CERT
     else
-      exit_warning "SSL cert file $SSL_CERT does not exist"
+      warning_message "SSL cert file $SSL_CERT does not exist" "EXIT"
     fi
     command_message "$RACADM_BIN -r $OOB_HOST -u $OOB_USER -p $OOB_PASS racreset"
     $RACADM_BIN -r $OOB_HOST -u $OOB_USER -p $OOB_PASS racreset
@@ -455,7 +486,7 @@ do
   fi
   if [ "$2" = "" ]; then
     if ! [[ "$1" =~ "version" ]] && ! [[ "$1" =~ "help" ]] && ! [[ "$1" =~ "usage" ]]; then
-      exit_warning "No $1 specified"
+      warning_message "No $1 specified" "EXIT"
     fi
   fi
   case $1 in

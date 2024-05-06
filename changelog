@@ -27,3 +27,7 @@
 # Improvements for MacOS
 # 0.1.4: Sat  4 May 2024 21:46:48 AEST
 # Improved macOS support
+# 0.1.5: Mon May  6 14:03:03 AEST 2024
+# Improved warning message code
+# 0.1.6: Mon May  6 16:49:24 AEST 2024
+# Fixed racadm command

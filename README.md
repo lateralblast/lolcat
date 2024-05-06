@@ -8,7 +8,7 @@ LOM/OOB Letsencrypt Certificate Automation Tool
 Version
 -------
 
-Current Version: 0.1.4
+Current Version: 0.1.6
 
 Prerequisites
 -------------
@@ -62,6 +62,7 @@ You can get help using the -h or --help switch:
     --oobuser     OOB device user (default: root)
     --oobpass     OOB device pass (default: calvin)
     --keytype     Key type (default: rsa2048)
+    --keypath     Key path (default: /var/snap/lego/common/.lego/certificates)
     --sslkey      SSL key file to upload to OOB device
     --sslcert     SSL cert file to uploard to OOB device
 
@@ -69,6 +70,7 @@ You can get help using the -h or --help switch:
 
     verbose       Verbose output (default: false)
     wildcard      Wildcard domain (default: false)
+    nowildcard    Wildcard domain (default: false)
     testmode      Run in test mode (default: false)  
 
 ```
